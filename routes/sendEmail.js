@@ -1,46 +1,49 @@
-import express, { json } from 'express';
-import path from 'path';
-// import { jsonData } from '../data/getData.js';
+const express =  require ('express');
+const ejs = require ("ejs");
+
 const router = express.Router();
 let jsonData = [];
-
-// router.post('/',(req, res) => {
-//     //lấy dữ liệu yêu cầu
-//     const inputData = req.body.inputData;
-
-//     const templatePath = path.join(__dirname, 'template/html');
-
-//     //Đọc nội dung template HTML
-//     fs.readFile(templatePath, 'utf8', (err,templateContent) => {
-//         if(err) return res.status(500).send('err reading template file');
-//         //thay thế placeholder 
-//         const finalHTML = templateContent.replace('{{inputData}}', inputData);
-
-//         res.send(finalHTML);
-
-//     })
-// })
+const  mongoose = require ('mongoose');
+const MailTemplate = require('../data/data.js');
+const db = require('../data/mongodb.js');
 
 function sendMail(html, callback) {
     console.log(html);
     callback();
 };
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     //Lấy dữ liệu JSON từ client
     const data = req.body;
     jsonData.push({...data});
-    // console.log(jsonData.data.userFName);
-    // console.log(('output.ejs',{jsonData}));
-    let html = ('output.ejs',{jsonData});
-    sendMail(html, () => {
-        res.json({ status: 'success', message: 'successfully' });
-    });
+
+    
+    let docs = await MailTemplate.findOne({ "slug": "reset_password" }).exec();
+    console.log("day la docs",docs);
+    // res.render('./views/template.ejs',{docs});
+    let html = ejs.renderFile('docs', {db});
+    // res.render(html);
+    console.log(html);
+
+
+    // sendMail(html, () => {
+    //     mongoose.connection.close();
+    //     res.json({ status: 'success', message: 'successfully' });
+    // });
+    
+    // let html = ejs.renderFile('./views/output.ejs',{jsonData});
+    // sendMail(html, () => {
+    //     mongoose.connection.close();
+    //     res.json({ status: 'success', message: 'successfully' });
+    // });
 })
 
-router.get('/', (req, res) => {
-    //render HTML bằng EJS và trả result
-    console.log(jsonData);
-})
+// router.get('/', (req, res) => {
+//     //render HTML bằng EJS và trả result
+//     console.log(jsonData);
+//     res.render('mail_template', {jsonData});
+// })
 
-export default router;
+
+
+module.exports = router;
