@@ -1,49 +1,51 @@
 const express =  require ('express');
 const ejs = require ("ejs");
-
+const email = require('../data/data.js');
+const result = require('../data/result.js');
 const router = express.Router();
-let jsonData = [];
-const  mongoose = require ('mongoose');
-const MailTemplate = require('../data/data.js');
-const db = require('../data/mongodb.js');
 
-function sendMail(html, callback) {
-    console.log(html);
-    callback();
+function sendMail(opts, callback) {
+    console.log(opts.title, opts.html);
+    callback(null, { status: 'OK', message: 'Send mail successfully' });
 };
 
+async function GetTemplate(slug) {
+    try{
+        const doc = await email.findOne({ slug });
+        console.log("day la doc: ",doc);
+        return doc;
+    }catch (err) {
+        console.error(err);
+        throw err;
+    }
+}
+
 router.post('/', async (req, res) => {
-    //Lấy dữ liệu JSON từ client
     const data = req.body;
-    jsonData.push({...data});
+    try{
+        const { title, content } = await GetTemplate(data.template);
+        let renderedTitle = ejs.render(title, data.data);
+        let renderedHtml = ejs.render(content, data.data);
 
-    
-    let docs = await MailTemplate.findOne({ "slug": "reset_password" }).exec();
-    console.log("day la docs",docs);
-    // res.render('./views/template.ejs',{docs});
-    let html = ejs.renderFile('docs', {db});
-    // res.render(html);
-    console.log(html);
-
-
-    // sendMail(html, () => {
-    //     mongoose.connection.close();
-    //     res.json({ status: 'success', message: 'successfully' });
-    // });
-    
-    // let html = ejs.renderFile('./views/output.ejs',{jsonData});
-    // sendMail(html, () => {
-    //     mongoose.connection.close();
-    //     res.json({ status: 'success', message: 'successfully' });
-    // });
+        let resultSchema = await result.create({
+            receiver: data.to,
+            title: renderedTitle,
+            content: renderedHtml
+        })
+        
+        sendMail({
+            title: renderedTitle,
+            html: renderedHtml
+        }, (err, finall) => {
+            if(err){
+                res.status(500).json(err);
+            }
+            res.json(resultSchema || finall);
+        })
+        
+    } catch (error) {
+        console.log(error);
+        res.json({ status: 'error', message: 'Error in post route'});
+    }
 })
-
-// router.get('/', (req, res) => {
-//     //render HTML bằng EJS và trả result
-//     console.log(jsonData);
-//     res.render('mail_template', {jsonData});
-// })
-
-
-
 module.exports = router;

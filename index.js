@@ -15,8 +15,9 @@ MongoClient.connect('mongodb://hsdev:hsdev1234@mongo.likequiz.com:27017/hsdev', 
     }
 });
 
-// app.use('/users', usersRoutes);
 app.use('/send-email', sendEmailRoute);
 
 
 app.listen(PORT, () => console.log(`Server running on port: http://localhost:${PORT}`));
+
+module.exports = app;
